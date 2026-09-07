@@ -9,23 +9,39 @@ import { ResumeModule } from './resume/resume.module';
 import { AuthModule } from './auth/auth.module';
 import { AdminModule } from './admin/admin.module';
 import { MailModule } from './mail/mail.module';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [ ConfigModule.forRoot({
               isGlobal: true,
             }),
             UserModule, JobModule, ApplicationModule,
-            TypeOrmModule.forRoot({
-              type: 'postgres',
-              host: 'dpg-dafcuadbedkc738nrdj0-a',
-              port: 5432,
-              username: 'job_portal_c664_user',
-              password: 'D6uPBYynaGuPHqemer2yfeK4tpCiXrFI', 
-              database: 'job_portal_c664',
-              autoLoadEntities: true,
-              synchronize: true,
+            TypeOrmModule.forRootAsync({
+              imports: [ConfigModule],
+              inject: [ConfigService],
+              useFactory: (configService: ConfigService) => {
+                const databaseUrl = configService.get<string>('DATABASE_URL');
 
+                return {
+                  type: 'postgres' as const,
+                  ...(databaseUrl
+                    ? { url: databaseUrl }
+                    : {
+                        host: configService.get<string>('DB_HOST', 'localhost'),
+                        port: Number(configService.get<string>('DB_PORT', '5432')),
+                        username: configService.get<string>('DB_USERNAME', 'postgres'),
+                        password: configService.get<string>('DB_PASSWORD', ''),
+                        database: configService.get<string>('DB_NAME', 'job_portal'),
+                      }),
+                  autoLoadEntities: true,
+                  synchronize:
+                    configService.get<string>('DB_SYNCHRONIZE', 'true') === 'true',
+                  ssl:
+                    configService.get<string>('DB_SSL') === 'true'
+                      ? { rejectUnauthorized: false }
+                      : undefined,
+                };
+              },
             }),
             ResumeModule,
             AuthModule,
