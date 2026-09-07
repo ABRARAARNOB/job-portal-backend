@@ -10,57 +10,88 @@ import {
   Body,
   ParseIntPipe,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { Role } from 'src/common/enums/role.enum';
 import { UpdateStatusDto } from './dtos/update-status.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 
+@ApiTags('Applications')
+@ApiBearerAuth()
 @Controller('application')
 export class ApplicationController {
   constructor(private readonly applicationService: ApplicationService) {}
 
-  @Post(':jobId')
+  @Post('apply/:jobId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.STUDENT)
   apply(
     @Param('jobId', ParseIntPipe) jobId: number,
-    @Req() req,
+    @CurrentUser('id') studentId: number,
   ) {
-    return this.applicationService.apply(jobId, req.user.id);
+    return this.applicationService.apply(jobId, studentId);
   }
 
-  @Get('my')
+
+  @Get('my-application')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.STUDENT)
-  myApplications(@Req() req) {
-    return this.applicationService.myApplications(req.user.id);
+  myApplications(
+    @CurrentUser('id') studentId: number,
+  ) {
+    return this.applicationService.myApplications(studentId);
   }
 
-  @Get('job/:jobId')
+  @Get('search-job')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.STUDENT)
+  searchAppliedJobs(
+    @CurrentUser('id') studentId: number,
+    @Query('title') title?: string,
+  ) {
+    return this.applicationService.searchAppliedJobs(studentId, title);
+  }
+
+  @Get('filter-salary')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.STUDENT)
+  filterAppliedJobsBySalary(
+    @CurrentUser('id') studentId: number,
+    @Query('minSalary') minSalary?: string,
+    @Query('maxSalary') maxSalary?: string,
+  ) {
+    const min = minSalary ? Number(minSalary) : undefined;
+    const max = maxSalary ? Number(maxSalary) : undefined;
+    return this.applicationService.filterAppliedJobsBySalary(studentId, min, max);
+  }
+
+  @Get('PostedJob/:jobId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.RECRUITER)
   getApplicants(
     @Param('jobId', ParseIntPipe) jobId: number,
-    @Req() req,
+    @CurrentUser('id') recruiterId: number,
   ) {
     return this.applicationService.getApplicants(
       jobId,
-      req.user.id,
+      recruiterId,
     );
   }
 
-  @Patch(':applicationId/status')
+  @Patch('PostedJob/:applicationId/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.RECRUITER)
   updateStatus(
     @Param('applicationId', ParseIntPipe) id: number,
     @Body() dto: UpdateStatusDto,
-    @Req() req,
+    @CurrentUser('id') recruiterId: number,
   ) {
     return this.applicationService.updateStatus(
       id,
-      req.user.id,
+      recruiterId,
       dto,
     );
   }

@@ -5,18 +5,20 @@ import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { Role } from 'src/common/enums/role.enum';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Users')
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.STUDENT)
-  getAllUser()
-  {
-    return this.userService.getAllUser();
-  }
+  // @Get("all")
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(Role.ADMIN)
+  // getAllUser()
+  // {
+  //   return this.userService.getAllUser();
+  // }
 
   @Patch(":email")
   updateProfile(@Param("email") email: string, @Body() dto: UpdateUserDto)

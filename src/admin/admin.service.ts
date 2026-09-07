@@ -44,8 +44,7 @@ export class AdminService
 
         const totalJobs = await this.jobRepository.count();
 
-        const totalApplications =
-            await this.applicationRepository.count();
+        const totalApplications = await this.applicationRepository.count();
 
         return {
             totalUsers,
@@ -57,16 +56,9 @@ export class AdminService
     }
 
 
+
     async findAllUsers() {
-        return this.userRepository.find({
-            select: {
-            id: true,
-            fullName: true,
-            email: true,
-            role: true,
-            createdAt: true,
-            },
-        });
+        return this.userRepository.find();
     }
 
     async deleteUser(id: number) {

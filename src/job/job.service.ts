@@ -5,6 +5,9 @@ import { Repository } from 'typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { CreateJobDto } from './dtos/create-job.dto';
 import { UpdateJobDto } from './dtos/update-job.dto';
+import { JobNotFoundException } from 'src/common/exceptions/job-not-found.exception';
+import { MailService } from 'src/mail/mail.service';
+import { UnauthorizedRecruiterException } from 'src/common/exceptions/unauthorized-recruiter.exception';
 
 @Injectable()
 export class JobService 
@@ -15,6 +18,7 @@ export class JobService
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
+
 
   async create( recruiterId: number, createJobDto: CreateJobDto) {
     const recruiter = await this.userRepository.findOne({
@@ -32,8 +36,6 @@ export class JobService
 
     return this.jobRepository.save(job);
   }
-
-
   
   async findAll() {
     return this.jobRepository.find({
@@ -45,20 +47,22 @@ export class JobService
   }
 
   async findOne(id: number) {
-    const job = await this.jobRepository.findOne({
+    const jobs = await this.jobRepository.findOne({
       where: { id },
       relations: {recruiter: true},
     });
 
-    if (!job) {
-      throw new NotFoundException('Job not found');
+    if (!jobs) {
+      throw new JobNotFoundException();
     }
 
-    return job;
+    return jobs;
   }
 
   async findMyJobs(recruiterId: number) {
-    return this.jobRepository.find({
+
+
+    const job =  this.jobRepository.find({
       where: {
         recruiter: {
           id: recruiterId,
@@ -69,6 +73,14 @@ export class JobService
         createdAt: 'DESC',
       },
     });
+
+    if (!job) {
+      throw new JobNotFoundException();
+    }
+
+    return job;
+
+
   }
 
   async update(
@@ -79,9 +91,7 @@ export class JobService
     const job = await this.findOne(id);
 
     if (job.recruiter.id !== recruiterId) {
-      throw new ForbiddenException(
-        'You are not allowed to edit this job',
-      );
+      throw new UnauthorizedRecruiterException();
     }
 
     Object.assign(job, dto);
@@ -93,9 +103,7 @@ export class JobService
     const job = await this.findOne(id);
 
     if (job.recruiter.id !== recruiterId) {
-      throw new ForbiddenException(
-        'You are not allowed to delete this job',
-      );
+      throw new UnauthorizedRecruiterException();
     }
 
     await this.jobRepository.remove(job);

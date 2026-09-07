@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { Repository } from 'typeorm';
 import { Resume } from './entities/resume.entity';
+import { UserNotFoundException } from 'src/common/exceptions/user-not-found.exception';
 
 @Injectable()
 export class ResumeService 
@@ -17,10 +18,9 @@ export class ResumeService
         const user = await this.userRepository.findOne({ where: { id: userId }, });
 
         if (!user) {
-        throw new NotFoundException('User not found');
+        throw new UserNotFoundException();
         }
 
-        
         const existingResume = await this.resumeRepository.findOne({
         where: {
             user: {
@@ -37,7 +37,6 @@ export class ResumeService
         await this.resumeRepository.remove(existingResume);
         }
 
-        
         const resume = this.resumeRepository.create({
         fileName: file.originalname,
         filePath: file.path,
@@ -48,7 +47,8 @@ export class ResumeService
         return await this.resumeRepository.save(resume);
     }
 
-    async getResume(userId: number) {
+    async getResume(userId: number) 
+    {
         const resume = await this.resumeRepository.findOne({
         where: {
             user: {
@@ -67,7 +67,8 @@ export class ResumeService
         return resume;
   }
 
-  async deleteResume(userId: number) {
+  async deleteResume(userId: number) 
+  {
     const resume = await this.resumeRepository.findOne({
       where: {
         user: {

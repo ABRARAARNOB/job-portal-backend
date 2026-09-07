@@ -3,9 +3,16 @@ import { ResumeService } from './resume.service';
 import { diskStorage } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { Role } from 'src/common/enums/role.enum';
 
+@ApiTags('Resume')
 @Controller('resume')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard,RolesGuard)
+@Roles(Role.STUDENT)
 export class ResumeController {
   constructor(private readonly resumeService: ResumeService) {}
 
@@ -17,12 +24,12 @@ export class ResumeController {
         destination: './uploads/resumes',
 
         filename: (_, file, callback) => {
-          const unique =
+          const name =
             Date.now() +
             '-' +
             file.originalname;
 
-          callback(null, file.originalname,);
+          callback(null, name,);
         },
       }),
 
@@ -38,26 +45,23 @@ export class ResumeController {
       },
     }),
   )
-  uploadResume(@Req() req, @UploadedFile() file: Express.Multer.File,)
+  uploadResume(@CurrentUser('id') userId: number,@UploadedFile() file: Express.Multer.File,) 
   {
-    return this.resumeService.uploadResume(
-      req.user.id,
-      file,
-    );
+    return this.resumeService.uploadResume(userId,file,);
   }
 
 
   @Get('me')
-  getResume(@Req() req) {
-    return this.resumeService.getResume(req.user.id,);
+  getResume( @CurrentUser('id') userId: number,) 
+  {
+    return this.resumeService.getResume(userId);
   }
 
-  
+
   @Delete()
-  deleteResume(@Req() req) {
-    return this.resumeService.deleteResume(
-      req.user.id,
-    );
+  deleteResume( @CurrentUser('id') userId: number,)
+  {
+    return this.resumeService.deleteResume(userId);
   }
 
 }

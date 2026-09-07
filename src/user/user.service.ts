@@ -4,29 +4,26 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
-import { NotFoundError } from 'rxjs';
+import { UserNotFoundException } from 'src/common/exceptions/user-not-found.exception';
 
 @Injectable()
 export class UserService 
 {
-    constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    ){}
+    constructor(@InjectRepository(User) private readonly userRepository: Repository<User>,){}
 
-    async getAllUser()
-    {
-      const users = await this.userRepository.find();
+    // async getAllUser()
+    // {
+    //   const users = await this.userRepository.find();
 
-      return{
-        message: "All User Fatched Successfully",
-        data: users
-      }
-    }
+    //   return{
+    //     message: "All User",
+    //     data: users
+    //   }
+    // }
 
     async create(createUserDto: CreateUserDto) {
       const user = this.userRepository.create(createUserDto);
-      this.userRepository.save(user);
+      await this.userRepository.save(user);
       return {
         message: "User Created Sucessfully",
         data: user
@@ -38,6 +35,11 @@ export class UserService
         where: { email },
       });
 
+      if(!user)
+      {
+        throw new UserNotFoundException();
+      }
+      
       return{
         message: "User Found",
         data: user
@@ -45,13 +47,13 @@ export class UserService
     }
 
     async updateProfile(email: string, dto: UpdateUserDto) {
-      const user =await this.userRepository.findOne({
+      const user = await this.userRepository.findOne({
         where: { email },
       });
 
       if(!user)
       {
-        throw new NotFoundException("User Not Found");
+        throw new UserNotFoundException();
       }
 
       Object.assign(user, dto);

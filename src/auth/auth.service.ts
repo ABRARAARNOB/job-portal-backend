@@ -10,66 +10,77 @@ import * as bcrypt from 'bcryptjs';
 import { UserService } from 'src/user/user.service';
 import { RegisterDto } from './dtos/register.dto';
 import { LoginDto } from './dtos/login.dto';
+import { MailService } from 'src/mail/mail.service';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class AuthService 
 {
-    constructor(
-    private readonly usersService: UserService,
-    private readonly jwtService: JwtService,) {}
+    constructor( private readonly usersService: UserService,
+                private readonly jwtService: JwtService,
+                private readonly mailService: MailService,
+                private readonly mailerService: MailerService) {}
 
-    async register(registerDto: RegisterDto) {
 
-        const existingUser = await this.usersService.findByEmail(
-        registerDto.email,
-        );
+    async sendMail(to: string, subject: string, text: string) 
+    {
+        const result = await this.mailerService.sendMail({
+            to,
+            subject,
+            text,
+          });
 
-        if (existingUser.data) {
-        throw new ConflictException('Email already exists');
+    }
+
+
+    async register(registerDto: RegisterDto) 
+    {
+        let existingUser;
+        try {
+            existingUser = await this.usersService.findByEmail(registerDto.email);
+        } catch (error) {
+            // User not found, this is expected for a new registration
         }
 
-        const hashedPassword = await bcrypt.hash(
-        registerDto.password,
-        10,
-        );
+        if (existingUser && existingUser.data) 
+        {
+            throw new ConflictException('Email already exists');
+        }
+
+        const hashedPassword = await bcrypt.hash( registerDto.password, 10,);
 
         const user = await this.usersService.create({
-        ...registerDto,
-        password: hashedPassword,
+          ...registerDto,
+          password: hashedPassword,
         });
+      
+        await this.mailService.sendMail(user.data.email, 'Welcome to University Job Portal','Hello, welcome to our University Job Portal!',);
 
         return {
-        message: 'Registration successful',
-        data: user,
+          message: 'Registration successful',
+          data: user,
         };
   }
 
-  async login(loginDto: LoginDto) {
-
-    const userOb = await this.usersService.findByEmail(
-      loginDto.email,
-    );
+  async login(loginDto: LoginDto) 
+  {
+    const userOb = await this.usersService.findByEmail(loginDto.email,);
     const user = userOb.data;
 
-    if (!user) {
-      throw new UnauthorizedException(
-        'Invalid email or password',
-      );
+    if (!user) 
+    {
+      throw new UnauthorizedException('Invalid email ',);
     }
 
-    const matched = await bcrypt.compare(
-      loginDto.password,
-      user.password,
-    );
+    const matched = await bcrypt.compare( loginDto.password,user.password,);
 
-    if (!matched) {
-      throw new UnauthorizedException(
-        'Invalid  password',
-      );
+    if (!matched) 
+    {
+      throw new UnauthorizedException( 'Invalid  password',);
     }
 
     const payload = {
-      sub: user.id,
+      id: user.id,
       email: user.email,
       role: user.role,
     };

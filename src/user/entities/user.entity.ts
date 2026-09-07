@@ -72,9 +72,7 @@ export class User {
   @OneToMany(()=> Application, (application) => application.student)
   applications: Application[];
 
-  @OneToOne(() => Resume, (resume) => resume.user, {
-  cascade: true,
-  })
+  @OneToOne(() => Resume, (resume) => resume.user)
     resume: Resume;
 
 
