@@ -18,11 +18,11 @@ import { ConfigModule } from '@nestjs/config';
             UserModule, JobModule, ApplicationModule,
             TypeOrmModule.forRoot({
               type: 'postgres',
-              host: 'localhost',
+              host: 'dpg-dafcuadbedkc738nrdj0-a',
               port: 5432,
-              username: 'postgres',
-              password: 'arnob', 
-              database: 'JOB_PORTAL',
+              username: 'job_portal_c664_user',
+              password: 'D6uPBYynaGuPHqemer2yfeK4tpCiXrFI', 
+              database: 'job_portal_c664',
               autoLoadEntities: true,
               synchronize: true,
 
