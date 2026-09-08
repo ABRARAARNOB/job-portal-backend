@@ -4,12 +4,15 @@ import {
   Controller,
   Get,
   Post,
-  Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { RegisterDto } from './dtos/register.dto';
 import { LoginDto } from './dtos/login.dto';
 import { ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -25,10 +28,32 @@ export class AuthController {
   }
 
 
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  getMe(@CurrentUser('id') id: number) {
+    return this.authService.getMe(id);
+  }
+
   @Post('login')
-  login(@Body() loginDto: LoginDto) 
+  async login(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+  )
   {
-    return this.authService.login(loginDto);
+    const result = await this.authService.login(loginDto);
+    const secure = process.env.NODE_ENV === 'production';
+
+    response.cookie('access_token', result.access_token, {
+      httpOnly: true,
+      secure,
+      sameSite: secure ? 'none' : 'lax',
+      maxAge: 60 * 60 * 1000,
+    });
+
+    return {
+      message: 'Login successful',
+      status: true,
+    };
   }
 
 

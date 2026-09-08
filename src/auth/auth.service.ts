@@ -90,5 +90,15 @@ export class AuthService
     };
   }
 
+  async getMe(id: number) {
+    const user = await this.usersService.findById(id);
+
+    return {
+      id: user.data.id,
+      email: user.data.email,
+      role: user.data.role,
+    };
+  }
+
 
 }
