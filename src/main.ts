@@ -9,8 +9,30 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.use(cookieParser());
+  
+  // Dynamic CORS setup to handle localhost, development variations, and production domains
   app.enableCors({
-    origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:5173', // Common fallback if you use Vite/React
+        'http://127.0.0.1:3000',
+      ];
+
+      // Add environment variable URL to the allowed origins if it exists
+      if (process.env.FRONTEND_URL) {
+        // Splitting by comma allows you to support multiple production URLs if needed
+        const envOrigins = process.env.FRONTEND_URL.split(',').map((url) => url.trim());
+        allowedOrigins.push(...envOrigins);
+      }
+
+      // Allow requests with no origin (like Postman, mobile clients, or server-to-server requests)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS Architecture'));
+      }
+    },
     credentials: true,
   });
 
