@@ -8,8 +8,10 @@ import cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Cookie parser
   app.use(cookieParser());
 
+  // CORS
   app.enableCors({
     origin: [
       'http://localhost:3000',
@@ -17,9 +19,27 @@ async function bootstrap() {
       'http://127.0.0.1:3000',
       process.env.FRONTEND_URL,
     ].filter(Boolean),
+
     credentials: true,
+
+    methods: [
+      'GET',
+      'HEAD',
+      'PUT',
+      'PATCH',
+      'POST',
+      'DELETE',
+      'OPTIONS',
+    ],
+
+    allowedHeaders: [
+      'Content-Type',
+      'Accept',
+      'Authorization',
+    ],
   });
 
+  // Validation
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -27,8 +47,10 @@ async function bootstrap() {
     }),
   );
 
+  // Global exception filter
   app.useGlobalFilters(new HttpExceptionFilter());
 
+  // Swagger
   const config = new DocumentBuilder()
     .setTitle('University Job Portal API')
     .setDescription('REST API for University Job Portal')
@@ -40,6 +62,7 @@ async function bootstrap() {
 
   SwaggerModule.setup('api', app, document);
 
+  // Start server
   await app.listen(process.env.PORT ?? 3000);
 }
 
