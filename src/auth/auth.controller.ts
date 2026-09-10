@@ -19,17 +19,13 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // =========================
-  // REGISTER
-  // =========================
+ 
   @Post('register')
   register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 
-  // =========================
-  // LOGIN
-  // =========================
+  
   @Post('login')
   async login(
     @Body() loginDto: LoginDto,
@@ -42,16 +38,15 @@ export class AuthController {
     response.cookie('access_token', result.access_token, {
       httpOnly: true,
 
-      // HTTPS is required for production Vercel/Render
+  
       secure: isProduction,
 
-      // Required for Vercel frontend -> Render backend
+   
       sameSite: isProduction ? 'none' : 'lax',
-
-      // 1 hour
+ 
       maxAge: 60 * 60 * 1000,
 
-      // Cookie is available for all backend routes
+ 
       path: '/',
     });
 
@@ -61,18 +56,14 @@ export class AuthController {
     };
   }
 
-  // =========================
-  // CURRENT USER
-  // =========================
+ 
   @Get('me')
   @UseGuards(JwtAuthGuard)
   getMe(@CurrentUser('id') id: number) {
     return this.authService.getMe(id);
   }
 
-  // =========================
-  // LOGOUT
-  // =========================
+ 
   @Post('logout')
   logout(@Res({ passthrough: true }) response: Response) {
     response.clearCookie('access_token', {
