@@ -12,7 +12,12 @@ import { MailModule } from './mail/mail.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
-  imports: [ ConfigModule.forRoot({
+  imports: [
+              ServeStaticModule.forRoot({
+              rootPath: join(process.cwd(), 'uploads'),
+              serveRoot: '/uploads',
+            }),
+            ConfigModule.forRoot({
               isGlobal: true,
             }),
             UserModule, JobModule, ApplicationModule,
