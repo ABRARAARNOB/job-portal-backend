@@ -1,16 +1,3 @@
-import { Module } from '@nestjs/common';
-import { ResumeService } from './resume.service';
-import { ResumeController } from './resume.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Resume } from './entities/resume.entity';
-import { User } from 'src/user/entities/user.entity';
-
-@Module({
-  imports:[TypeOrmModule.forFeature([Resume,User])],
-  controllers: [ResumeController],
-  providers: [ResumeService],
-})
-export class ResumeModule {}
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/entities/user.entity';
