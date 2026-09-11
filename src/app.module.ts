@@ -10,48 +10,52 @@ import { AuthModule } from './auth/auth.module';
 import { AdminModule } from './admin/admin.module';
 import { MailModule } from './mail/mail.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ServeStaticModule } from '@nestjs/serve-static'; // <-- Added this
+import { join } from 'path'; // <-- Added this
 
 @Module({
   imports: [
-              ServeStaticModule.forRoot({
-              rootPath: join(process.cwd(), 'uploads'),
-              serveRoot: '/uploads',
-            }),
-            ConfigModule.forRoot({
-              isGlobal: true,
-            }),
-            UserModule, JobModule, ApplicationModule,
-            TypeOrmModule.forRootAsync({
-              imports: [ConfigModule],
-              inject: [ConfigService],
-              useFactory: (configService: ConfigService) => {
-                const databaseUrl = configService.get<string>('DATABASE_URL');
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads',
+    }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    UserModule,
+    JobModule,
+    ApplicationModule,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const databaseUrl = configService.get<string>('DATABASE_URL');
 
-                return {
-                  type: 'postgres' as const,
-                  ...(databaseUrl
-                    ? { url: databaseUrl }
-                    : {
-                        host: configService.get<string>('DB_HOST', 'localhost'),
-                        port: Number(configService.get<string>('DB_PORT', '5432')),
-                        username: configService.get<string>('DB_USERNAME', 'postgres'),
-                        password: configService.get<string>('DB_PASSWORD', ''),
-                        database: configService.get<string>('DB_NAME', 'job_portal'),
-                      }),
-                  autoLoadEntities: true,
-                  synchronize:
-                    configService.get<string>('DB_SYNCHRONIZE', 'true') === 'true',
-                  ssl:
-                    configService.get<string>('DB_SSL') === 'true'
-                      ? { rejectUnauthorized: false }
-                      : undefined,
-                };
-              },
-            }),
-            ResumeModule,
-            AuthModule,
-            AdminModule,
-            MailModule
+        return {
+          type: 'postgres' as const,
+          ...(databaseUrl
+            ? { url: databaseUrl }
+            : {
+                host: configService.get<string>('DB_HOST', 'localhost'),
+                port: Number(configService.get<string>('DB_PORT', '5432')),
+                username: configService.get<string>('DB_USERNAME', 'postgres'),
+                password: configService.get<string>('DB_PASSWORD', ''),
+                database: configService.get<string>('DB_NAME', 'job_portal'),
+              }),
+          autoLoadEntities: true,
+          synchronize:
+            configService.get<string>('DB_SYNCHRONIZE', 'true') === 'true',
+          ssl:
+            configService.get<string>('DB_SSL') === 'true'
+              ? { rejectUnauthorized: false }
+              : undefined,
+        };
+      },
+    }),
+    ResumeModule,
+    AuthModule,
+    AdminModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
