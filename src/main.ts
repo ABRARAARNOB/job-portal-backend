@@ -4,12 +4,16 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import cookieParser from 'cookie-parser';
+import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Cookie parser
   app.use(cookieParser());
+
+  // Serve uploaded resumes
+  app.useStaticAssets(join(process.cwd(), 'uploads'));
 
   // CORS
   app.enableCors({
