@@ -1,100 +1,66 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/user/entities/user.entity';
 import { Repository } from 'typeorm';
-import { Resume } from './entities/resume.entity';
+
+import { User } from 'src/user/entities/user.entity';
 import { UserNotFoundException } from 'src/common/exceptions/user-not-found.exception';
+import { Resume } from './entities/resume.entity';
 
 @Injectable()
-export class ResumeService 
-{
-    constructor(@InjectRepository(Resume)private readonly resumeRepository: Repository<Resume>,
-                @InjectRepository(User) private readonly userRepository: Repository<User>){}
+export class ResumeService {
+  constructor(
+    @InjectRepository(Resume)
+    private readonly resumeRepository: Repository<Resume>,
 
-    
-    async uploadResume(userId: number,file: Express.Multer.File,)
-    {
-    
-        const user = await this.userRepository.findOne({ where: { id: userId }, });
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {}
 
-        if (!user) {
-        throw new UserNotFoundException();
-        }
+  async uploadResume(
+    userId: number,
+    file: Express.Multer.File,
+  ) {
+    const user = await this.userRepository.findOne({
+      where: {
+        id: userId,
+      },
+    });
 
-        const existingResume = await this.resumeRepository.findOne({
-        where: {
-            user: {
-            id: userId,
-            },
-        },
-        relations: {
-            user: true,
-            },
-        });
-
-        
-        if (existingResume) {
-        await this.resumeRepository.remove(existingResume);
-        }
-
-        const resume = this.resumeRepository.create({
-        fileName: file.originalname,
-        filePath: file.path,
-        fileSize: file.size,
-        user,
-        });
-
-        return await this.resumeRepository.save(resume);
+    if (!user) {
+      throw new UserNotFoundException();
     }
 
-    async getResume(userId: number) 
-    {
-        const resume = await this.resumeRepository.findOne({
-        where: {
-            user: {
-            id: userId,
-            },
-        },
-        relations: {
-            user: true,
-            },
-        });
-
-        if (!resume) {
-        throw new NotFoundException('Resume not found');
-        }
-
-        return resume;
-  }
-
-  async deleteResume(userId: number) 
-  {
-    const resume = await this.resumeRepository.findOne({
+    const existingResume = await this.resumeRepository.findOne({
       where: {
         user: {
           id: userId,
         },
       },
-      relations: {
-        user: true,
-        }
     });
 
-    if (!resume) {
-      throw new NotFoundException('Resume not found');
+    if (existingResume) {
+      await this.resumeRepository.remove(existingResume);
     }
 
-    await this.resumeRepository.remove(resume);
+    const resume = this.resumeRepository.create({
+      fileName: file.originalname,
+      filePath: file.path,
+      fileSize: file.size,
+      user,
+    });
 
-    return {
-      message: 'Resume deleted successfully',
-    };
+    return this.resumeRepository.save(resume);
   }
 
-  async getResumeById(id: number) {
+  async getResume(userId: number) {
     const resume = await this.resumeRepository.findOne({
       where: {
-        id,
+        user: {
+          id: userId,
+        },
       },
       relations: {
         user: true,
@@ -108,4 +74,42 @@ export class ResumeService
     return resume;
   }
 
+  async deleteResume(userId: number) {
+    const resume = await this.resumeRepository.findOne({
+      where: {
+        user: {
+          id: userId,
+        },
+      },
+    });
+
+    if (!resume) {
+      throw new NotFoundException('Resume not found');
+    }
+
+    await this.resumeRepository.remove(resume);
+
+    return {
+      message: 'Resume deleted successfully',
+    };
+  }
+
+  async getResumeByUserId(userId: number) {
+    const resume = await this.resumeRepository.findOne({
+      where: {
+        user: {
+          id: userId,
+        },
+      },
+      relations: {
+        user: true,
+      },
+    });
+
+    if (!resume) {
+      throw new NotFoundException('Resume not found');
+    }
+
+    return resume;
+  }
 }
