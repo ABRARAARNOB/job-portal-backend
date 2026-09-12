@@ -1,80 +1,87 @@
-import { BadRequestException, Controller, Delete, Get, Param, Post, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
-import { ResumeService } from './resume.service';
+import {
+  BadRequestException,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { diskStorage } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
+
+import { ResumeService } from './resume.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { ApiTags } from '@nestjs/swagger';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { Role } from 'src/common/enums/role.enum';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Resume')
+@ApiBearerAuth()
 @Controller('resume')
 @UseGuards(JwtAuthGuard)
 export class ResumeController {
   constructor(private readonly resumeService: ResumeService) {}
 
+  @Post('upload')
   @UseGuards(RolesGuard)
   @Roles(Role.STUDENT)
-  @Post('upload')
   @UseInterceptors(
     FileInterceptor('resume', {
       storage: diskStorage({
         destination: './uploads/resumes',
-
         filename: (_, file, callback) => {
-          const name =
-            Date.now() +
-            '-' +
-            file.originalname;
-
-          callback(null, name,);
+          const filename = `${Date.now()}-${file.originalname}`;
+          callback(null, filename);
         },
       }),
-
-      fileFilter: (res, file, cb) => {
-        if (file.originalname.match(/^.*\.(jpg|jpeg|pdf)$/)) {
-          cb(null, true);
+      fileFilter: (_, file, callback) => {
+        if (file.originalname.match(/\.(jpg|jpeg|pdf)$/i)) {
+          callback(null, true);
         } else {
-          cb(new BadRequestException('file type not accepted'), false);
+          callback(
+            new BadRequestException('Only JPG, JPEG, and PDF files are accepted'),
+            false,
+          );
         }
       },
-      limits:{
+      limits: {
         fileSize: 5 * 1024 * 1024,
       },
     }),
   )
-  uploadResume(@CurrentUser('id') userId: number,@UploadedFile() file: Express.Multer.File,) 
-  {
-    return this.resumeService.uploadResume(userId,file,);
+  uploadResume(
+    @CurrentUser('id') userId: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.resumeService.uploadResume(userId, file);
   }
 
-
+  @Get('my-resume')
   @UseGuards(RolesGuard)
   @Roles(Role.STUDENT)
-  @Get('my-resume')
-  getResume( @CurrentUser('id') userId: number,) 
-  {
+  getMyResume(@CurrentUser('id') userId: number) {
     return this.resumeService.getResume(userId);
   }
 
-
+  @Delete('delete/resume')
   @UseGuards(RolesGuard)
   @Roles(Role.STUDENT)
-  @Delete("delete/resume")
-  deleteResume( @CurrentUser('id') userId: number,)
-  {
+  deleteResume(@CurrentUser('id') userId: number) {
     return this.resumeService.deleteResume(userId);
   }
 
+  @Get('student/:studentId')
   @UseGuards(RolesGuard)
   @Roles(Role.RECRUITER, Role.ADMIN)
-  @Get(':id')
-  getResumeById(@Param('id') id: number) {
-    return this.resumeService.getResumeById(id);
+  getStudentResume(
+    @Param('studentId', ParseIntPipe) studentId: number,
+  ) {
+    return this.resumeService.getResume(studentId);
   }
-
-
-
 }
