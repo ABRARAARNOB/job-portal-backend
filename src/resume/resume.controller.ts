@@ -26,7 +26,9 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 @Controller('resume')
 @UseGuards(JwtAuthGuard)
 export class ResumeController {
-  constructor(private readonly resumeService: ResumeService) {}
+  constructor(
+    private readonly resumeService: ResumeService,
+  ) {}
 
   @Post('upload')
   @UseGuards(RolesGuard)
@@ -40,16 +42,20 @@ export class ResumeController {
           callback(null, filename);
         },
       }),
+
       fileFilter: (_, file, callback) => {
         if (file.originalname.match(/\.(jpg|jpeg|pdf)$/i)) {
           callback(null, true);
         } else {
           callback(
-            new BadRequestException('Only JPG, JPEG, and PDF files are accepted'),
+            new BadRequestException(
+              'Only JPG, JPEG, and PDF files are accepted',
+            ),
             false,
           );
         }
       },
+
       limits: {
         fileSize: 5 * 1024 * 1024,
       },
@@ -82,6 +88,6 @@ export class ResumeController {
   getStudentResume(
     @Param('studentId', ParseIntPipe) studentId: number,
   ) {
-    return this.resumeService.getResume(studentId);
+    return this.resumeService.getResumeByUserId(studentId);
   }
 }
