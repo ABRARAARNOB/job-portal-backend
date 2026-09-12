@@ -15,8 +15,10 @@ async function bootstrap() {
   // Cookie parser
   app.use(cookieParser());
 
-  // Serve uploaded resumes
-  app.useStaticAssets(join(process.cwd(), 'uploads'));
+  // Serve uploaded resumes at /uploads/...
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads',
+  });
 
   // CORS
   app.enableCors({
