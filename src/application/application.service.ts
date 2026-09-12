@@ -171,32 +171,37 @@ export class ApplicationService
   }
 
   async updateStatus(
-    applicationId: number,
-    recruiterId: number,
-    dto: UpdateStatusDto,
-  ) {
-    const application = await this.applicationRepository.findOne({
-      where: {
-        id: applicationId,
+  applicationId: number,
+  recruiterId: number,
+  dto: UpdateStatusDto,
+) {
+  const application = await this.applicationRepository.findOne({
+    where: {
+      id: applicationId,
+    },
+    relations: {
+      student: true,
+      job: {
+        recruiter: true,
       },
-      relations:{
-                  job: {
-                    recruiter: true,
-                    },
-                }
-    });
+    },
+  });
 
-    if (!application) {
-      throw new ApplicationNotFoundException();
-    }
+  if (!application) {
+    throw new ApplicationNotFoundException();
+  }
 
-    if (application.job.recruiter.id !== recruiterId) {
-      throw new UnauthorizedRecruiterException();
-    }
+  if (!application.job || !application.job.recruiter) {
+    throw new JobNotFoundException();
+  }
 
-    application.status = dto.status;
+  if (application.job.recruiter.id !== recruiterId) {
+    throw new UnauthorizedRecruiterException();
+  }
 
-    await this.mailService.sendMail(
+  application.status = dto.status;
+
+  await this.mailService.sendMail(
     application.student.email,
     'Application Status Updated',
     `Hello ${application.student.fullName},
@@ -206,8 +211,8 @@ export class ApplicationService
     Status:
     ${application.status}
     `,
-    );
+  );
 
-    return this.applicationRepository.save(application);
-  }
+  return this.applicationRepository.save(application);
+}
 }
